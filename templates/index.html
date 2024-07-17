@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatGPT Chatbot</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #FFFFFF;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        select, button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            background-color: #1E1E1E;
+            color: #FFFFFF;
+            border: 1px solid #333;
+        }
+        .chat-box {
+            background-color: #1E1E1E;
+            padding: 20px;
+            border-radius: 5px;
+            margin-top: 10px;
+            overflow-y: scroll;
+            height: 300px;
+        }
+        .chat-message {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .chat-message.user {
+            background-color: blue;
+            text-align: right;
+        }
+        .chat-message.bot {
+            background-color: yellowgreen;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>ChatGPT Chatbot</h1>
+        <select id="modelSelect">
+            <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+            <option value="gpt-4-turbo">GPT-4 Turbo</option>
+        </select>
+        <textarea id="userInput" rows="9" style="width: 100%;" placeholder="Digite sua mensagem..."></textarea>
+
+        <button onclick="sendMessage()">Enviar</button>
+        <div class="chat-box" id="chatBox"></div>
+    </div>
+
+    <script>
+        let messages = [
+            {"role": "system", "content": "You are a helpful assistant."}
+        ];
+
+        async function sendMessage() {
+            const userInput = document.getElementById('userInput').value;
+            const model = document.getElementById('modelSelect').value;
+            const chatBox = document.getElementById('chatBox');
+            
+            if (userInput.trim() === "") return;
+
+            const userMessageDiv = document.createElement('div');
+            userMessageDiv.className = 'chat-message user';
+            userMessageDiv.innerText = `Você: ${userInput}`;
+            chatBox.appendChild(userMessageDiv);
+
+            messages.push({"role": "user", "content": userInput});
+
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        messages: messages,
+                        model: model
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    const botMessageDiv = document.createElement('div');
+                    botMessageDiv.className = 'chat-message bot';
+                    botMessageDiv.innerText = `Chatbot: ${data.response}`;
+                    chatBox.appendChild(botMessageDiv);
+
+                    messages.push({"role": "assistant", "content": data.response});
+                } else {
+                    const botMessageDiv = document.createElement('div');
+                    botMessageDiv.className = 'chat-message bot';
+                    botMessageDiv.innerText = `Erro: ${data.error}`;
+                    chatBox.appendChild(botMessageDiv);
+                }
+            } catch (error) {
+                const botMessageDiv = document.createElement('div');
+                botMessageDiv.className = 'chat-message bot';
+                botMessageDiv.innerText = `Erro de rede: ${error.message}`;
+                chatBox.appendChild(botMessageDiv);
+            }
+
+            document.getElementById('userInput').value = '';
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+    </script>
+</body>
+</html>
