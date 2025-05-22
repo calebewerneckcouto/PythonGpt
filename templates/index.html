@@ -1,120 +1,179 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ChatGPT Chatbot</title>
-    <style>
-        body {
-            background-color: #121212;
-            color: #FFFFFF;
-            font-family: Arial, sans-serif;
-        }
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        select, button {
-            width: 100%;
-            padding: 10px;
-            margin-top: 10px;
-            background-color: #1E1E1E;
-            color: #FFFFFF;
-            border: 1px solid #333;
-        }
-        .chat-box {
-            background-color: #1E1E1E;
-            padding: 20px;
-            border-radius: 5px;
-            margin-top: 10px;
-            overflow-y: scroll;
-            height: 300px;
-        }
-        .chat-message {
-            margin: 10px 0;
-            padding: 10px;
-            border-radius: 5px;
-        }
-        .chat-message.user {
-            background-color: blue;
-            text-align: right;
-        }
-        .chat-message.bot {
-            background-color: yellowgreen;
-            text-align: left;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ChatGPT Voz</title>
+  <style>
+    body {
+      background-color: #121212;
+      color: #FFFFFF;
+      font-family: Arial, sans-serif;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    select, button, textarea {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      background-color: #1E1E1E;
+      color: #FFFFFF;
+      border: 1px solid #333;
+    }
+    .chat-box {
+      background-color: #1E1E1E;
+      padding: 20px;
+      border-radius: 5px;
+      margin-top: 10px;
+      overflow-y: scroll;
+      height: 300px;
+    }
+    .chat-message {
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 5px;
+    }
+    .chat-message.user {
+      background-color: blue;
+      text-align: right;
+    }
+    .chat-message.bot {
+      background-color: yellowgreen;
+      text-align: left;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>ChatGPT Chatbot</h1>
-        <select id="modelSelect">
-            <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-            <option value="gpt-4-turbo">GPT-4 Turbo</option>
-        </select>
-        <textarea id="userInput" rows="9" style="width: 100%;" placeholder="Digite sua mensagem..."></textarea>
+  <div class="container">
+    <h1>ChatGPT com Voz</h1>
+    <select id="modelSelect">
+      <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+      <option value="gpt-4-turbo">GPT-4 Turbo</option>
+    </select>
+    <textarea id="userInput" rows="5" placeholder="Digite ou fale sua mensagem..."></textarea>
+    <button onclick="startListening()">🎤 Falar com o Chatbot</button>
+    <button onclick="sendMessage()">Enviar</button>
+    <div class="chat-box" id="chatBox"></div>
+  </div>
 
-        <button onclick="sendMessage()">Enviar</button>
-        <div class="chat-box" id="chatBox"></div>
-    </div>
+  <script>
+    let messages = [
+      {
+        role: "system",
+        content: "Você é um assistente útil. Quando o usuário pedir para praticar inglês, atue como um professor de inglês e responda em inglês. Quando ele pedir explicação ou usar a palavra 'português', explique em português. Para diálogos, só leia a sua parte e aguarde o usuário responder."
+      }
+    ];
 
-    <script>
-        let messages = [
-            {"role": "system", "content": "You are a helpful assistant."}
-        ];
+    let isDialogMode = false;
 
-        async function sendMessage() {
-            const userInput = document.getElementById('userInput').value;
-            const model = document.getElementById('modelSelect').value;
-            const chatBox = document.getElementById('chatBox');
-            
-            if (userInput.trim() === "") return;
+    async function sendMessage() {
+      const userInput = document.getElementById('userInput').value.trim();
+      const model = document.getElementById('modelSelect').value;
+      const chatBox = document.getElementById('chatBox');
 
-            const userMessageDiv = document.createElement('div');
-            userMessageDiv.className = 'chat-message user';
-            userMessageDiv.innerText = `Você: ${userInput}`;
-            chatBox.appendChild(userMessageDiv);
+      if (userInput === "") return;
 
-            messages.push({"role": "user", "content": userInput});
+      const userDiv = document.createElement('div');
+      userDiv.className = 'chat-message user';
+      userDiv.innerText = `Você: ${userInput}`;
+      chatBox.appendChild(userDiv);
 
-            try {
-                const response = await fetch('/chat', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        messages: messages,
-                        model: model
-                    })
-                });
+      messages.push({ role: "user", content: userInput });
 
-                const data = await response.json();
+      if (userInput.toLowerCase().includes("diálogo")) {
+        isDialogMode = true;
+      }
 
-                if (response.ok) {
-                    const botMessageDiv = document.createElement('div');
-                    botMessageDiv.className = 'chat-message bot';
-                    botMessageDiv.innerText = `Chatbot: ${data.response}`;
-                    chatBox.appendChild(botMessageDiv);
+      try {
+        const response = await fetch('/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages, model })
+        });
 
-                    messages.push({"role": "assistant", "content": data.response});
-                } else {
-                    const botMessageDiv = document.createElement('div');
-                    botMessageDiv.className = 'chat-message bot';
-                    botMessageDiv.innerText = `Erro: ${data.error}`;
-                    chatBox.appendChild(botMessageDiv);
-                }
-            } catch (error) {
-                const botMessageDiv = document.createElement('div');
-                botMessageDiv.className = 'chat-message bot';
-                botMessageDiv.innerText = `Erro de rede: ${error.message}`;
-                chatBox.appendChild(botMessageDiv);
-            }
+        const data = await response.json();
+        const botText = data.response;
 
-            document.getElementById('userInput').value = '';
-            chatBox.scrollTop = chatBox.scrollHeight;
+        const botDiv = document.createElement('div');
+        botDiv.className = 'chat-message bot';
+        botDiv.innerText = `Chatbot: ${botText}`;
+        chatBox.appendChild(botDiv);
+
+        messages.push({ role: "assistant", content: botText });
+
+        if (isDialogMode) {
+          // Só fala a parte do bot no diálogo
+          speakResponse(botText, detectLanguage(botText));
+        } else {
+          // Fala normalmente
+          speakResponse(botText, detectLanguage(userInput));
         }
-    </script>
+
+      } catch (error) {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'chat-message bot';
+        errorDiv.innerText = `Erro de rede: ${error.message}`;
+        chatBox.appendChild(errorDiv);
+      }
+
+      document.getElementById('userInput').value = '';
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    // Detecta idioma com base na mensagem
+    function detectLanguage(text) {
+      const portugueseKeywords = ["português", "explique", "traduza", "me ensina", "o que significa"];
+      return portugueseKeywords.some(word => text.toLowerCase().includes(word)) ? "pt-BR" : "en-US";
+    }
+
+    // Voz personalizada: feminina para português, masculina para inglês
+    function speakResponse(text, lang) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = lang;
+
+      const voices = speechSynthesis.getVoices();
+      const femalePt = voices.find(v => v.lang === "pt-BR" && v.name.toLowerCase().includes("fem"));
+      const maleEn = voices.find(v => v.lang === "en-US" && v.name.toLowerCase().includes("male"));
+
+      if (lang === "pt-BR" && femalePt) {
+        utterance.voice = femalePt;
+      } else if (lang === "en-US" && maleEn) {
+        utterance.voice = maleEn;
+      }
+
+      speechSynthesis.speak(utterance);
+    }
+
+    // Atualiza vozes (necessário para pegar após carregamento da página)
+    window.speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
+
+    // Ativa reconhecimento de fala
+    function startListening() {
+      if (!('webkitSpeechRecognition' in window)) {
+        alert("Reconhecimento de voz não suportado neste navegador.");
+        return;
+      }
+
+      const recognition = new webkitSpeechRecognition();
+      recognition.lang = 'pt-BR';
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.start();
+
+      recognition.onresult = function (event) {
+        const transcript = event.results[0][0].transcript;
+        document.getElementById('userInput').value = transcript;
+        sendMessage();
+      };
+
+      recognition.onerror = function (event) {
+        alert("Erro no reconhecimento de voz: " + event.error);
+      };
+    }
+  </script>
 </body>
 </html>
