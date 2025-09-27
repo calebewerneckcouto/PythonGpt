@@ -1,18 +1,111 @@
-<script>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Chat com Sophia</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #f9f9f9;
+      color: #333;
+    }
+    #chatContainer {
+      border: 1px solid #ccc;
+      height: 300px;
+      overflow-y: auto;
+      padding: 10px;
+      margin-bottom: 10px;
+      background: #fff;
+      border-radius: 6px;
+    }
+    .chat-message.user {
+      text-align: right;
+      background-color: #daf1da;
+      margin: 5px 0;
+      padding: 8px 12px;
+      border-radius: 15px 15px 0 15px;
+      display: inline-block;
+      max-width: 75%;
+      word-wrap: break-word;
+    }
+    .chat-message.assistant {
+      text-align: left;
+      background-color: #f1f0f0;
+      margin: 5px 0;
+      padding: 8px 12px;
+      border-radius: 15px 15px 15px 0;
+      display: inline-block;
+      max-width: 75%;
+      word-wrap: break-word;
+    }
+    textarea {
+      width: 100%;
+      box-sizing: border-box;
+      resize: none;
+      border-radius: 6px;
+      padding: 10px;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      height: 50px;
+      transition: height 0.2s;
+      font-family: inherit;
+    }
+    button {
+      cursor: pointer;
+      padding: 10px 15px;
+      margin: 5px 5px 0 0;
+      font-size: 1rem;
+      border: none;
+      border-radius: 6px;
+      background-color: #007bff;
+      color: white;
+      transition: background-color 0.3s;
+    }
+    button:disabled {
+      background-color: #a0c4ff;
+      cursor: not-allowed;
+    }
+    #micBtn.listening {
+      background-color: #dc3545;
+    }
+    #statusText {
+      margin-top: 8px;
+      font-style: italic;
+      color: #555;
+    }
+    #langIndicator {
+      margin-top: 4px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="chatContainer"></div>
+
+  <textarea id="userInput" rows="3" placeholder="Digite sua mensagem ou use o microfone..."></textarea>
+  <br />
+  <button id="sendBtn" onclick="sendMessage()">Enviar ✨</button>
+  <button id="micBtn" onclick="toggleListening()">🎤</button>
+
+  <div id="statusText">Pronto para conversar</div>
+  <div id="langIndicator">🇧🇷 Português detectado</div>
+
+  <script>
     let messages = [];
     let isListening = false;
     let recognition = null;
     let currentLanguage = 'pt-BR';
     let availableVoices = [];
 
-    // Inicialização
     window.onload = function() {
       initializeSpeech();
       setupTextarea();
     };
 
     function initializeSpeech() {
-      // Carrega vozes disponíveis
       function loadVoices() {
         availableVoices = speechSynthesis.getVoices();
       }
@@ -20,7 +113,6 @@
       loadVoices();
       speechSynthesis.onvoiceschanged = loadVoices;
 
-      // Configurar reconhecimento de voz
       if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         recognition = new SpeechRecognition();
@@ -32,6 +124,10 @@
 
     function setupTextarea() {
       const textarea = document.getElementById('userInput');
+      if (!textarea) {
+        console.error('Elemento userInput não encontrado!');
+        return;
+      }
       textarea.addEventListener('keypress', function(e) {
         if (e.key === 'Enter' && !e.shiftKey) {
           e.preventDefault();
@@ -46,15 +142,12 @@
     }
 
     function detectLanguage(text) {
-      // Palavras-chave para português
       const portugueseWords = [
         'você', 'que', 'não', 'sim', 'como', 'onde', 'quando', 'porque', 'muito', 
         'bem', 'bom', 'dia', 'noite', 'obrigado', 'obrigada', 'por favor', 'com licença',
         'desculpa', 'oi', 'olá', 'tchau', 'até', 'logo', 'tudo', 'nada', 'alguma',
         'coisa', 'pessoa', 'gente', 'casa', 'trabalho', 'escola', 'família'
       ];
-
-      // Palavras-chave para inglês
       const englishWords = [
         'the', 'and', 'you', 'that', 'was', 'for', 'are', 'with', 'his', 'they',
         'have', 'this', 'will', 'can', 'how', 'what', 'when', 'where', 'why',
@@ -73,7 +166,6 @@
         if (englishWords.includes(word)) enScore++;
       });
 
-      // Detecção adicional por padrões
       if (/ção|são|não|muito|também|português|brasileiro/.test(textLower)) {
         ptScore += 3;
       }
@@ -83,7 +175,6 @@
 
       const detectedLang = ptScore > enScore ? 'pt-BR' : 'en-US';
       currentLanguage = detectedLang;
-      
       updateLanguageIndicator();
       return detectedLang;
     }
@@ -101,7 +192,6 @@
       const voices = availableVoices.filter(voice => voice.lang.startsWith(language.split('-')[0]));
       
       if (language === 'pt-BR') {
-        // Procurar voz feminina brasileira
         return voices.find(v => 
           v.lang === 'pt-BR' && 
           (v.name.toLowerCase().includes('luciana') || 
@@ -110,7 +200,6 @@
            v.name.toLowerCase().includes('feminino'))
         ) || voices.find(v => v.lang === 'pt-BR') || voices[0];
       } else {
-        // Procurar voz masculina americana
         return voices.find(v => 
           v.lang === 'en-US' && 
           (v.name.toLowerCase().includes('david') || 
@@ -179,7 +268,6 @@
         micBtn.classList.remove('listening');
         micBtn.innerHTML = '🎤';
         
-        // Detectar idioma do que foi falado
         detectLanguage(transcript);
         sendMessage();
       };
@@ -209,28 +297,22 @@
       const userInput = document.getElementById('userInput').value.trim();
       if (!userInput) return;
 
-      const chatContainer = document.getElementById('chatContainer');
       const sendBtn = document.getElementById('sendBtn');
 
-      // Detectar idioma da mensagem
       const detectedLang = detectLanguage(userInput);
-      
-      // Mostrar mensagem do usuário
+
       addMessage(userInput, 'user');
 
-      // Desabilitar botão de envio
       sendBtn.disabled = true;
       sendBtn.innerHTML = 'Enviando...';
       updateStatus('Pensando...');
 
-      // Adicionar mensagem do usuário ao histórico
       messages.push({
         role: "user",
         content: userInput
       });
 
       try {
-        // Chamar a API real do OpenAI
         const response = await fetch('/chat', {
           method: 'POST',
           headers: {
@@ -249,8 +331,7 @@
         }
 
         const assistantReply = data.response;
-        
-        // Adicionar resposta do assistente ao histórico
+
         messages.push({
           role: "assistant",
           content: assistantReply
@@ -258,7 +339,6 @@
 
         addMessage(assistantReply, 'assistant');
 
-        // Falar a resposta
         speakText(assistantReply, detectedLang);
 
       } catch (error) {
@@ -266,12 +346,11 @@
         const errorMessage = currentLanguage === 'pt-BR' 
           ? 'Desculpe, houve um erro. Podemos tentar novamente?'
           : 'Sorry, there was an error. Shall we try again?';
-        
+
         addMessage(errorMessage, 'assistant');
         speakText(errorMessage, detectedLang);
       }
 
-      // Limpar input e reabilitar botão
       document.getElementById('userInput').value = '';
       document.getElementById('userInput').style.height = '50px';
       sendBtn.disabled = false;
@@ -289,14 +368,7 @@
       chatContainer.appendChild(messageDiv);
       chatContainer.scrollTop = chatContainer.scrollHeight;
     }
+  </script>
 
-    // Função para obter a hora atual formatada
-    function getCurrentTime() {
-      const now = new Date();
-      return now.toLocaleTimeString('pt-BR', { 
-        hour: '2-digit', 
-        minute: '2-digit',
-        hour12: false 
-      });
-    }
-</script>
+</body>
+</html>
