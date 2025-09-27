@@ -1,6 +1,7 @@
 import os
 from flask import Flask, request, jsonify, render_template
 import openai
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -24,9 +25,29 @@ def chat():
 
         app.logger.info(f"Received messages: {messages} with model: {model}")
 
+        # Adiciona contexto para tornar a conversa mais natural
+        system_message = {
+            "role": "system", 
+            "content": """Você é uma assistente inteligente e prestativa chamada Sophia. Responda de forma natural e conversacional, como uma pessoa real. 
+            
+            IMPORTANTE:
+            - Seja empática e engajada na conversa
+            - Quando perguntarem sobre horas, datas ou tempo, forneça a informação atual de forma útil
+            - Mostre personalidade e interesse genuíno no usuário
+            - Use emojis ocasionalmente para tornar a conversa mais vibrante
+            - Faça perguntas de volta para manter a conversa fluindo
+            - Adapte seu idioma ao do usuário (português ou inglês)
+            - Seja útil, mas também amigável e com um toque pessoal"""
+        }
+
+        # Insere a mensagem do sistema no início
+        messages_with_context = [system_message] + messages
+
         response = openai.ChatCompletion.create(
             model=model,
-            messages=messages
+            messages=messages_with_context,
+            temperature=0.8,  # Mais criatividade nas respostas
+            max_tokens=500   # Respostas mais longas e completas
         )
 
         reply = response['choices'][0]['message']['content']

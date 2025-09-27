@@ -1,265 +1,4 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Chat com Voz Inteligente</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: #ffffff;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .container {
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: 20px;
-      padding: 30px;
-      width: 90%;
-      max-width: 800px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    }
-
-    .header {
-      text-align: center;
-      margin-bottom: 30px;
-    }
-
-    .header h1 {
-      font-size: 2.5rem;
-      margin-bottom: 10px;
-      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-    }
-
-    .language-indicator {
-      display: inline-block;
-      padding: 5px 15px;
-      background: rgba(255, 255, 255, 0.2);
-      border-radius: 20px;
-      font-size: 0.9rem;
-      margin-bottom: 20px;
-    }
-
-    .chat-container {
-      background: rgba(0, 0, 0, 0.2);
-      border-radius: 15px;
-      padding: 20px;
-      height: 400px;
-      overflow-y: auto;
-      margin-bottom: 20px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .chat-message {
-      margin: 15px 0;
-      padding: 15px 20px;
-      border-radius: 20px;
-      max-width: 80%;
-      word-wrap: break-word;
-      animation: fadeIn 0.3s ease-in;
-    }
-
-    .chat-message.user {
-      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-      margin-left: auto;
-      text-align: right;
-      border-bottom-right-radius: 5px;
-    }
-
-    .chat-message.assistant {
-      background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-      margin-right: auto;
-      color: #333;
-      border-bottom-left-radius: 5px;
-    }
-
-    .input-container {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 15px;
-    }
-
-    .input-wrapper {
-      flex: 1;
-      position: relative;
-    }
-
-    textarea {
-      width: 100%;
-      padding: 15px 20px;
-      border: none;
-      border-radius: 25px;
-      background: rgba(255, 255, 255, 0.1);
-      color: #ffffff;
-      font-size: 1rem;
-      resize: none;
-      height: 50px;
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      transition: all 0.3s ease;
-    }
-
-    textarea:focus {
-      outline: none;
-      background: rgba(255, 255, 255, 0.15);
-      border-color: rgba(255, 255, 255, 0.4);
-      box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
-    }
-
-    textarea::placeholder {
-      color: rgba(255, 255, 255, 0.7);
-    }
-
-    .button-group {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-    }
-
-    button {
-      padding: 12px 25px;
-      border: none;
-      border-radius: 25px;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-    }
-
-    .mic-btn {
-      background: linear-gradient(135deg, #ff6b6b, #ee5a24);
-      color: white;
-      min-width: 60px;
-    }
-
-    .mic-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
-    }
-
-    .mic-btn.listening {
-      animation: pulse 1.5s infinite;
-      background: linear-gradient(135deg, #ff3838, #ff6b6b);
-    }
-
-    .send-btn {
-      background: linear-gradient(135deg, #4facfe, #00f2fe);
-      color: white;
-    }
-
-    .send-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(79, 172, 254, 0.4);
-    }
-
-    .send-btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-      transform: none;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    @keyframes pulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.1); }
-      100% { transform: scale(1); }
-    }
-
-    .status-indicator {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      margin-top: 15px;
-      font-size: 0.9rem;
-      opacity: 0.8;
-    }
-
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #43e97b;
-    }
-
-    .scrollbar::-webkit-scrollbar {
-      width: 6px;
-    }
-
-    .scrollbar::-webkit-scrollbar-track {
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 10px;
-    }
-
-    .scrollbar::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.3);
-      border-radius: 10px;
-    }
-
-    .scrollbar::-webkit-scrollbar-thumb:hover {
-      background: rgba(255, 255, 255, 0.5);
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h1>🎤 Chat Inteligente</h1>
-      <div class="language-indicator" id="langIndicator">
-        🌍 Detecção automática de idioma
-      </div>
-    </div>
-    
-    <div class="chat-container scrollbar" id="chatContainer">
-      <div class="chat-message assistant">
-        Olá! Sou seu assistente inteligente. Posso conversar em português ou inglês - apenas fale naturalmente que detectarei seu idioma automaticamente! 🌟
-      </div>
-    </div>
-    
-    <div class="input-container">
-      <div class="input-wrapper">
-        <textarea 
-          id="userInput" 
-          placeholder="Digite sua mensagem ou clique no microfone para falar..."
-          rows="2"
-        ></textarea>
-      </div>
-    </div>
-    
-    <div class="button-group">
-      <button class="mic-btn" id="micBtn" onclick="toggleListening()">
-        🎤
-      </button>
-      <button class="send-btn" id="sendBtn" onclick="sendMessage()">
-        Enviar ✨
-      </button>
-    </div>
-    
-    <div class="status-indicator">
-      <div class="status-dot"></div>
-      <span id="statusText">Pronto para conversar</span>
-    </div>
-  </div>
-
-  <script>
+<script>
     let messages = [];
     let isListening = false;
     let recognition = null;
@@ -482,14 +221,55 @@
       // Desabilitar botão de envio
       sendBtn.disabled = true;
       sendBtn.innerHTML = 'Enviando...';
+      updateStatus('Pensando...');
 
-      // Simular resposta do assistente (aqui você conectaria com uma API real)
-      const response = await generateResponse(userInput, detectedLang);
-      
-      addMessage(response, 'assistant');
+      // Adicionar mensagem do usuário ao histórico
+      messages.push({
+        role: "user",
+        content: userInput
+      });
 
-      // Falar a resposta
-      speakText(response, detectedLang);
+      try {
+        // Chamar a API real do OpenAI
+        const response = await fetch('/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            messages: messages,
+            model: 'gpt-3.5-turbo'
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+          throw new Error(data.error);
+        }
+
+        const assistantReply = data.response;
+        
+        // Adicionar resposta do assistente ao histórico
+        messages.push({
+          role: "assistant",
+          content: assistantReply
+        });
+
+        addMessage(assistantReply, 'assistant');
+
+        // Falar a resposta
+        speakText(assistantReply, detectedLang);
+
+      } catch (error) {
+        console.error('Erro:', error);
+        const errorMessage = currentLanguage === 'pt-BR' 
+          ? 'Desculpe, houve um erro. Podemos tentar novamente?'
+          : 'Sorry, there was an error. Shall we try again?';
+        
+        addMessage(errorMessage, 'assistant');
+        speakText(errorMessage, detectedLang);
+      }
 
       // Limpar input e reabilitar botão
       document.getElementById('userInput').value = '';
@@ -510,31 +290,13 @@
       chatContainer.scrollTop = chatContainer.scrollHeight;
     }
 
-    async function generateResponse(userMessage, language) {
-      // Simular delay de processamento
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Respostas de exemplo baseadas no idioma
-      if (language === 'pt-BR') {
-        const responses = [
-          "Entendi sua mensagem em português! Como posso ajudá-lo hoje?",
-          "Que interessante! Posso explicar mais sobre isso em português.",
-          "Claro! Vou responder em português para você.",
-          "Perfeito! Detectei que você está falando em português. Em que mais posso ajudar?",
-          "Compreendo! Vou continuar nossa conversa em português."
-        ];
-        return responses[Math.floor(Math.random() * responses.length)];
-      } else {
-        const responses = [
-          "I understand you're speaking in English! How can I help you today?",
-          "That's interesting! I can explain more about that in English.",
-          "Sure! I'll respond in English for you.",
-          "Perfect! I detected you're speaking English. What else can I help you with?",
-          "I understand! I'll continue our conversation in English."
-        ];
-        return responses[Math.floor(Math.random() * responses.length)];
-      }
+    // Função para obter a hora atual formatada
+    function getCurrentTime() {
+      const now = new Date();
+      return now.toLocaleTimeString('pt-BR', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false 
+      });
     }
-  </script>
-</body>
-</html>
+</script>
