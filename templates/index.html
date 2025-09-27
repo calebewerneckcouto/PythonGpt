@@ -3,176 +3,537 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>ChatGPT Voz</title>
+  <title>Chat com Voz Inteligente</title>
   <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
-      background-color: #121212;
-      color: #FFFFFF;
-      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #ffffff;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
+
     .container {
-      max-width: 600px;
-      margin: 0 auto;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 20px;
+      padding: 30px;
+      width: 90%;
+      max-width: 800px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .header h1 {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .language-indicator {
+      display: inline-block;
+      padding: 5px 15px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 20px;
+      font-size: 0.9rem;
+      margin-bottom: 20px;
+    }
+
+    .chat-container {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 15px;
       padding: 20px;
+      height: 400px;
+      overflow-y: auto;
+      margin-bottom: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
-    select, button, textarea {
-      width: 100%;
-      padding: 10px;
-      margin-top: 10px;
-      background-color: #1E1E1E;
-      color: #FFFFFF;
-      border: 1px solid #333;
-    }
-    .chat-box {
-      background-color: #1E1E1E;
-      padding: 20px;
-      border-radius: 5px;
-      margin-top: 10px;
-      overflow-y: scroll;
-      height: 300px;
-    }
+
     .chat-message {
-      margin: 10px 0;
-      padding: 10px;
-      border-radius: 5px;
+      margin: 15px 0;
+      padding: 15px 20px;
+      border-radius: 20px;
+      max-width: 80%;
+      word-wrap: break-word;
+      animation: fadeIn 0.3s ease-in;
     }
+
     .chat-message.user {
-      background-color: blue;
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      margin-left: auto;
       text-align: right;
+      border-bottom-right-radius: 5px;
     }
-    .chat-message.bot {
-      background-color: yellowgreen;
-      text-align: left;
+
+    .chat-message.assistant {
+      background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+      margin-right: auto;
+      color: #333;
+      border-bottom-left-radius: 5px;
+    }
+
+    .input-container {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .input-wrapper {
+      flex: 1;
+      position: relative;
+    }
+
+    textarea {
+      width: 100%;
+      padding: 15px 20px;
+      border: none;
+      border-radius: 25px;
+      background: rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+      font-size: 1rem;
+      resize: none;
+      height: 50px;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      transition: all 0.3s ease;
+    }
+
+    textarea:focus {
+      outline: none;
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.4);
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+    }
+
+    textarea::placeholder {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .button-group {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    button {
+      padding: 12px 25px;
+      border: none;
+      border-radius: 25px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .mic-btn {
+      background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+      color: white;
+      min-width: 60px;
+    }
+
+    .mic-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+    }
+
+    .mic-btn.listening {
+      animation: pulse 1.5s infinite;
+      background: linear-gradient(135deg, #ff3838, #ff6b6b);
+    }
+
+    .send-btn {
+      background: linear-gradient(135deg, #4facfe, #00f2fe);
+      color: white;
+    }
+
+    .send-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(79, 172, 254, 0.4);
+    }
+
+    .send-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 15px;
+      font-size: 0.9rem;
+      opacity: 0.8;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #43e97b;
+    }
+
+    .scrollbar::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .scrollbar::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+    }
+
+    .scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 10px;
+    }
+
+    .scrollbar::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.5);
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>ChatGPT com Voz</h1>
-    <select id="modelSelect">
-      <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-      <option value="gpt-4-turbo">GPT-4 Turbo</option>
-    </select>
-    <textarea id="userInput" rows="5" placeholder="Digite ou fale sua mensagem..."></textarea>
-    <button onclick="startListening()">🎤 Falar com o Chatbot</button>
-    <button onclick="sendMessage()">Enviar</button>
-    <div class="chat-box" id="chatBox"></div>
+    <div class="header">
+      <h1>🎤 Chat Inteligente</h1>
+      <div class="language-indicator" id="langIndicator">
+        🌍 Detecção automática de idioma
+      </div>
+    </div>
+    
+    <div class="chat-container scrollbar" id="chatContainer">
+      <div class="chat-message assistant">
+        Olá! Sou seu assistente inteligente. Posso conversar em português ou inglês - apenas fale naturalmente que detectarei seu idioma automaticamente! 🌟
+      </div>
+    </div>
+    
+    <div class="input-container">
+      <div class="input-wrapper">
+        <textarea 
+          id="userInput" 
+          placeholder="Digite sua mensagem ou clique no microfone para falar..."
+          rows="2"
+        ></textarea>
+      </div>
+    </div>
+    
+    <div class="button-group">
+      <button class="mic-btn" id="micBtn" onclick="toggleListening()">
+        🎤
+      </button>
+      <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+        Enviar ✨
+      </button>
+    </div>
+    
+    <div class="status-indicator">
+      <div class="status-dot"></div>
+      <span id="statusText">Pronto para conversar</span>
+    </div>
   </div>
 
   <script>
-    let messages = [
-      {
-        role: "system",
-        content: "Você é um assistente útil. Quando o usuário pedir para praticar inglês, atue como um professor de inglês e responda em inglês. Quando ele pedir explicação ou usar a palavra 'português', explique em português. Para diálogos, só leia a sua parte e aguarde o usuário responder."
+    let messages = [];
+    let isListening = false;
+    let recognition = null;
+    let currentLanguage = 'pt-BR';
+    let availableVoices = [];
+
+    // Inicialização
+    window.onload = function() {
+      initializeSpeech();
+      setupTextarea();
+    };
+
+    function initializeSpeech() {
+      // Carrega vozes disponíveis
+      function loadVoices() {
+        availableVoices = speechSynthesis.getVoices();
       }
-    ];
+      
+      loadVoices();
+      speechSynthesis.onvoiceschanged = loadVoices;
 
-    let isDialogMode = false;
-
-    async function sendMessage() {
-      const userInput = document.getElementById('userInput').value.trim();
-      const model = document.getElementById('modelSelect').value;
-      const chatBox = document.getElementById('chatBox');
-
-      if (userInput === "") return;
-
-      const userDiv = document.createElement('div');
-      userDiv.className = 'chat-message user';
-      userDiv.innerText = `Você: ${userInput}`;
-      chatBox.appendChild(userDiv);
-
-      messages.push({ role: "user", content: userInput });
-
-      if (userInput.toLowerCase().includes("diálogo")) {
-        isDialogMode = true;
+      // Configurar reconhecimento de voz
+      if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
       }
+    }
 
-      try {
-        const response = await fetch('/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messages, model })
-        });
-
-        const data = await response.json();
-        const botText = data.response;
-
-        const botDiv = document.createElement('div');
-        botDiv.className = 'chat-message bot';
-        botDiv.innerText = `Chatbot: ${botText}`;
-        chatBox.appendChild(botDiv);
-
-        messages.push({ role: "assistant", content: botText });
-
-        if (isDialogMode) {
-          // Só fala a parte do bot no diálogo
-          speakResponse(botText, detectLanguage(botText));
-        } else {
-          // Fala normalmente
-          speakResponse(botText, detectLanguage(userInput));
+    function setupTextarea() {
+      const textarea = document.getElementById('userInput');
+      textarea.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          sendMessage();
         }
+      });
 
-      } catch (error) {
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'chat-message bot';
-        errorDiv.innerText = `Erro de rede: ${error.message}`;
-        chatBox.appendChild(errorDiv);
-      }
-
-      document.getElementById('userInput').value = '';
-      chatBox.scrollTop = chatBox.scrollHeight;
+      textarea.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+      });
     }
 
-    // Detecta idioma com base na mensagem
     function detectLanguage(text) {
-      const portugueseKeywords = ["português", "explique", "traduza", "me ensina", "o que significa"];
-      return portugueseKeywords.some(word => text.toLowerCase().includes(word)) ? "pt-BR" : "en-US";
+      // Palavras-chave para português
+      const portugueseWords = [
+        'você', 'que', 'não', 'sim', 'como', 'onde', 'quando', 'porque', 'muito', 
+        'bem', 'bom', 'dia', 'noite', 'obrigado', 'obrigada', 'por favor', 'com licença',
+        'desculpa', 'oi', 'olá', 'tchau', 'até', 'logo', 'tudo', 'nada', 'alguma',
+        'coisa', 'pessoa', 'gente', 'casa', 'trabalho', 'escola', 'família'
+      ];
+
+      // Palavras-chave para inglês
+      const englishWords = [
+        'the', 'and', 'you', 'that', 'was', 'for', 'are', 'with', 'his', 'they',
+        'have', 'this', 'will', 'can', 'how', 'what', 'when', 'where', 'why',
+        'hello', 'hi', 'bye', 'thank', 'please', 'sorry', 'good', 'morning',
+        'evening', 'night', 'yes', 'no', 'maybe', 'people', 'work', 'school'
+      ];
+
+      const textLower = text.toLowerCase();
+      const words = textLower.split(/\s+/);
+
+      let ptScore = 0;
+      let enScore = 0;
+
+      words.forEach(word => {
+        if (portugueseWords.includes(word)) ptScore++;
+        if (englishWords.includes(word)) enScore++;
+      });
+
+      // Detecção adicional por padrões
+      if (/ção|são|não|muito|também|português|brasileiro/.test(textLower)) {
+        ptScore += 3;
+      }
+      if (/ing\b|tion\b|the\s|and\s|english|american/.test(textLower)) {
+        enScore += 3;
+      }
+
+      const detectedLang = ptScore > enScore ? 'pt-BR' : 'en-US';
+      currentLanguage = detectedLang;
+      
+      updateLanguageIndicator();
+      return detectedLang;
     }
 
-    // Voz personalizada: feminina para português, masculina para inglês
-    function speakResponse(text, lang) {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = lang;
-
-      const voices = speechSynthesis.getVoices();
-      const femalePt = voices.find(v => v.lang === "pt-BR" && v.name.toLowerCase().includes("fem"));
-      const maleEn = voices.find(v => v.lang === "en-US" && v.name.toLowerCase().includes("male"));
-
-      if (lang === "pt-BR" && femalePt) {
-        utterance.voice = femalePt;
-      } else if (lang === "en-US" && maleEn) {
-        utterance.voice = maleEn;
+    function updateLanguageIndicator() {
+      const indicator = document.getElementById('langIndicator');
+      if (currentLanguage === 'pt-BR') {
+        indicator.innerHTML = '🇧🇷 Português detectado';
+      } else {
+        indicator.innerHTML = '🇺🇸 English detected';
       }
+    }
+
+    function getBestVoice(language) {
+      const voices = availableVoices.filter(voice => voice.lang.startsWith(language.split('-')[0]));
+      
+      if (language === 'pt-BR') {
+        // Procurar voz feminina brasileira
+        return voices.find(v => 
+          v.lang === 'pt-BR' && 
+          (v.name.toLowerCase().includes('luciana') || 
+           v.name.toLowerCase().includes('fernanda') ||
+           v.name.toLowerCase().includes('female') ||
+           v.name.toLowerCase().includes('feminino'))
+        ) || voices.find(v => v.lang === 'pt-BR') || voices[0];
+      } else {
+        // Procurar voz masculina americana
+        return voices.find(v => 
+          v.lang === 'en-US' && 
+          (v.name.toLowerCase().includes('david') || 
+           v.name.toLowerCase().includes('mark') ||
+           v.name.toLowerCase().includes('male') ||
+           v.name.toLowerCase().includes('masculino'))
+        ) || voices.find(v => v.lang === 'en-US') || voices[0];
+      }
+    }
+
+    function speakText(text, language) {
+      if (!text.trim()) return;
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = language;
+      
+      const bestVoice = getBestVoice(language);
+      if (bestVoice) {
+        utterance.voice = bestVoice;
+      }
+
+      utterance.rate = 0.9;
+      utterance.pitch = language === 'pt-BR' ? 1.1 : 0.9;
+      utterance.volume = 1.0;
 
       speechSynthesis.speak(utterance);
     }
 
-    // Atualiza vozes (necessário para pegar após carregamento da página)
-    window.speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
-
-    // Ativa reconhecimento de fala
-    function startListening() {
-      if (!('webkitSpeechRecognition' in window)) {
-        alert("Reconhecimento de voz não suportado neste navegador.");
+    function toggleListening() {
+      if (!recognition) {
+        updateStatus('Reconhecimento de voz não suportado neste navegador');
         return;
       }
 
-      const recognition = new webkitSpeechRecognition();
-      recognition.lang = 'pt-BR';
-      recognition.interimResults = false;
-      recognition.maxAlternatives = 1;
+      const micBtn = document.getElementById('micBtn');
+      
+      if (isListening) {
+        recognition.stop();
+        isListening = false;
+        micBtn.classList.remove('listening');
+        micBtn.innerHTML = '🎤';
+        updateStatus('Pronto para conversar');
+      } else {
+        startListening();
+      }
+    }
 
-      recognition.start();
+    function startListening() {
+      if (!recognition) return;
 
-      recognition.onresult = function (event) {
+      const micBtn = document.getElementById('micBtn');
+      recognition.lang = currentLanguage;
+
+      recognition.onstart = function() {
+        isListening = true;
+        micBtn.classList.add('listening');
+        micBtn.innerHTML = '🛑';
+        updateStatus('Escutando...');
+      };
+
+      recognition.onresult = function(event) {
         const transcript = event.results[0][0].transcript;
         document.getElementById('userInput').value = transcript;
+        
+        isListening = false;
+        micBtn.classList.remove('listening');
+        micBtn.innerHTML = '🎤';
+        
+        // Detectar idioma do que foi falado
+        detectLanguage(transcript);
         sendMessage();
       };
 
-      recognition.onerror = function (event) {
-        alert("Erro no reconhecimento de voz: " + event.error);
+      recognition.onerror = function(event) {
+        isListening = false;
+        micBtn.classList.remove('listening');
+        micBtn.innerHTML = '🎤';
+        updateStatus('Erro no reconhecimento: ' + event.error);
       };
+
+      recognition.onend = function() {
+        isListening = false;
+        micBtn.classList.remove('listening');
+        micBtn.innerHTML = '🎤';
+        updateStatus('Pronto para conversar');
+      };
+
+      recognition.start();
+    }
+
+    function updateStatus(message) {
+      document.getElementById('statusText').textContent = message;
+    }
+
+    async function sendMessage() {
+      const userInput = document.getElementById('userInput').value.trim();
+      if (!userInput) return;
+
+      const chatContainer = document.getElementById('chatContainer');
+      const sendBtn = document.getElementById('sendBtn');
+
+      // Detectar idioma da mensagem
+      const detectedLang = detectLanguage(userInput);
+      
+      // Mostrar mensagem do usuário
+      addMessage(userInput, 'user');
+
+      // Desabilitar botão de envio
+      sendBtn.disabled = true;
+      sendBtn.innerHTML = 'Enviando...';
+
+      // Simular resposta do assistente (aqui você conectaria com uma API real)
+      const response = await generateResponse(userInput, detectedLang);
+      
+      addMessage(response, 'assistant');
+
+      // Falar a resposta
+      speakText(response, detectedLang);
+
+      // Limpar input e reabilitar botão
+      document.getElementById('userInput').value = '';
+      document.getElementById('userInput').style.height = '50px';
+      sendBtn.disabled = false;
+      sendBtn.innerHTML = 'Enviar ✨';
+
+      updateStatus('Pronto para conversar');
+    }
+
+    function addMessage(text, sender) {
+      const chatContainer = document.getElementById('chatContainer');
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `chat-message ${sender}`;
+      messageDiv.textContent = text;
+      
+      chatContainer.appendChild(messageDiv);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    async function generateResponse(userMessage, language) {
+      // Simular delay de processamento
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Respostas de exemplo baseadas no idioma
+      if (language === 'pt-BR') {
+        const responses = [
+          "Entendi sua mensagem em português! Como posso ajudá-lo hoje?",
+          "Que interessante! Posso explicar mais sobre isso em português.",
+          "Claro! Vou responder em português para você.",
+          "Perfeito! Detectei que você está falando em português. Em que mais posso ajudar?",
+          "Compreendo! Vou continuar nossa conversa em português."
+        ];
+        return responses[Math.floor(Math.random() * responses.length)];
+      } else {
+        const responses = [
+          "I understand you're speaking in English! How can I help you today?",
+          "That's interesting! I can explain more about that in English.",
+          "Sure! I'll respond in English for you.",
+          "Perfect! I detected you're speaking English. What else can I help you with?",
+          "I understand! I'll continue our conversation in English."
+        ];
+        return responses[Math.floor(Math.random() * responses.length)];
+      }
     }
   </script>
 </body>
