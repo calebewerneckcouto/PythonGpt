@@ -87,7 +87,8 @@
 
   <textarea id="userInput" rows="3" placeholder="Digite sua mensagem ou use o microfone..."></textarea>
   <br />
-  <button id="sendBtn" onclick="sendMessage()">Enviar ✨</button>
+  <!-- Removi emoji do botão Enviar -->
+  <button id="sendBtn" onclick="sendMessage()">Enviar</button>
   <button id="micBtn" onclick="toggleListening()">🎤</button>
 
   <div id="statusText">Pronto para conversar</div>
@@ -105,11 +106,11 @@
       setupTextarea();
     };
 
+    // Inicializa vozes e reconhecimento de voz
     function initializeSpeech() {
       function loadVoices() {
         availableVoices = speechSynthesis.getVoices();
       }
-      
       loadVoices();
       speechSynthesis.onvoiceschanged = loadVoices;
 
@@ -122,6 +123,7 @@
       }
     }
 
+    // Ajusta altura do textarea e envia mensagem ao pressionar Enter
     function setupTextarea() {
       const textarea = document.getElementById('userInput');
       if (!textarea) {
@@ -141,6 +143,7 @@
       });
     }
 
+    // Detecta idioma básico baseado em palavras comuns
     function detectLanguage(text) {
       const portugueseWords = [
         'você', 'que', 'não', 'sim', 'como', 'onde', 'quando', 'porque', 'muito', 
@@ -166,12 +169,8 @@
         if (englishWords.includes(word)) enScore++;
       });
 
-      if (/ção|são|não|muito|também|português|brasileiro/.test(textLower)) {
-        ptScore += 3;
-      }
-      if (/ing\b|tion\b|the\s|and\s|english|american/.test(textLower)) {
-        enScore += 3;
-      }
+      if (/ção|são|não|muito|também|português|brasileiro/.test(textLower)) ptScore += 3;
+      if (/ing\b|tion\b|the\s|and\s|english|american/.test(textLower)) enScore += 3;
 
       const detectedLang = ptScore > enScore ? 'pt-BR' : 'en-US';
       currentLanguage = detectedLang;
@@ -179,6 +178,7 @@
       return detectedLang;
     }
 
+    // Atualiza indicador de idioma na interface
     function updateLanguageIndicator() {
       const indicator = document.getElementById('langIndicator');
       if (currentLanguage === 'pt-BR') {
@@ -188,6 +188,13 @@
       }
     }
 
+    // Remove emojis do texto para síntese vocal
+    function removeEmojis(text) {
+      // Regex Unicode para emojis e modificadores
+      return text.replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|[\uD83C-\uDBFF\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83D[\uDC00-\uDE4F]|\uD83D[\uDE80-\uDEFF]|\u200D|\uFE0F)/g, '').trim();
+    }
+
+    // Seleciona a melhor voz disponível para o idioma
     function getBestVoice(language) {
       const voices = availableVoices.filter(voice => voice.lang.startsWith(language.split('-')[0]));
       
@@ -210,10 +217,14 @@
       }
     }
 
+    // Fala o texto com a voz e idioma adequados, removendo emojis
     function speakText(text, language) {
       if (!text.trim()) return;
 
-      const utterance = new SpeechSynthesisUtterance(text);
+      const cleanText = removeEmojis(text);
+      if (!cleanText) return; // Não fala texto vazio após remoção
+
+      const utterance = new SpeechSynthesisUtterance(cleanText);
       utterance.lang = language;
       
       const bestVoice = getBestVoice(language);
@@ -228,6 +239,7 @@
       speechSynthesis.speak(utterance);
     }
 
+    // Alterna o estado do reconhecimento de voz
     function toggleListening() {
       if (!recognition) {
         updateStatus('Reconhecimento de voz não suportado neste navegador');
@@ -247,6 +259,7 @@
       }
     }
 
+    // Inicia o reconhecimento de voz
     function startListening() {
       if (!recognition) return;
 
@@ -289,12 +302,15 @@
       recognition.start();
     }
 
+    // Atualiza texto de status
     function updateStatus(message) {
       document.getElementById('statusText').textContent = message;
     }
 
+    // Envia mensagem, chama backend e fala a resposta
     async function sendMessage() {
-      const userInput = document.getElementById('userInput').value.trim();
+      const userInputElem = document.getElementById('userInput');
+      const userInput = userInputElem.value.trim();
       if (!userInput) return;
 
       const sendBtn = document.getElementById('sendBtn');
@@ -304,7 +320,7 @@
       addMessage(userInput, 'user');
 
       sendBtn.disabled = true;
-      sendBtn.innerHTML = 'Enviando...';
+      sendBtn.textContent = 'Enviando...';
       updateStatus('Pensando...');
 
       messages.push({
@@ -351,14 +367,15 @@
         speakText(errorMessage, detectedLang);
       }
 
-      document.getElementById('userInput').value = '';
-      document.getElementById('userInput').style.height = '50px';
+      userInputElem.value = '';
+      userInputElem.style.height = '50px';
       sendBtn.disabled = false;
-      sendBtn.innerHTML = 'Enviar ✨';
+      sendBtn.textContent = 'Enviar';
 
       updateStatus('Pronto para conversar');
     }
 
+    // Adiciona mensagem ao container e scrolla para baixo
     function addMessage(text, sender) {
       const chatContainer = document.getElementById('chatContainer');
       const messageDiv = document.createElement('div');
