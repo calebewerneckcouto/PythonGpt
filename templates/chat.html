@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Chat com IA | Tradutor em Tempo Real</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    .container {
+      width: 100%;
+      max-width: 800px;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      overflow: hidden;
+    }
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+    .header h1 {
+      font-size: 1.8rem;
+      margin-bottom: 5px;
+    }
+    .header p {
+      opacity: 0.9;
+      font-size: 0.9rem;
+    }
+    .nav-tabs {
+      display: flex;
+      background: #f5f5f5;
+      border-bottom: 2px solid #ddd;
+    }
+    .nav-tab {
+      flex: 1;
+      padding: 15px;
+      text-align: center;
+      cursor: pointer;
+      background: #f5f5f5;
+      border: none;
+      font-size: 1rem;
+      font-weight: 500;
+      transition: all 0.3s;
+    }
+    .nav-tab:hover {
+      background: #e0e0e0;
+    }
+    .nav-tab.active {
+      background: white;
+      border-bottom: 3px solid #667eea;
+      color: #667eea;
+    }
+    .chat-content {
+      padding: 30px;
+      display: flex;
+      flex-direction: column;
+      height: 600px;
+    }
+    .chat-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      border: 2px solid #e0e0e0;
+      border-radius: 15px;
+      margin-bottom: 20px;
+      background: #f9f9f9;
+    }
+    .message {
+      margin-bottom: 15px;
+      display: flex;
+      flex-direction: column;
+    }
+    .message.user {
+      align-items: flex-end;
+    }
+    .message.ai {
+      align-items: flex-start;
+    }
+    .message-bubble {
+      max-width: 80%;
+      padding: 12px 18px;
+      border-radius: 20px;
+      font-size: 1rem;
+      line-height: 1.4;
+    }
+    .message.user .message-bubble {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-bottom-right-radius: 5px;
+    }
+    .message.ai .message-bubble {
+      background: white;
+      color: #333;
+      border: 1px solid #e0e0e0;
+      border-bottom-left-radius: 5px;
+    }
+    .message-time {
+      font-size: 0.75rem;
+      color: #999;
+      margin-top: 5px;
+    }
+    .input-area {
+      display: flex;
+      gap: 10px;
+    }
+    #messageInput {
+      flex: 1;
+      padding: 15px 20px;
+      border-radius: 25px;
+      border: 2px solid #e0e0e0;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+    #messageInput:focus {
+      border-color: #667eea;
+    }
+    #sendBtn {
+      padding: 15px 25px;
+      border: none;
+      border-radius: 25px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    #sendBtn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+    .typing-indicator {
+      display: none;
+      padding: 12px 18px;
+      background: white;
+      border: 1px solid #e0e0e0;
+      border-radius: 20px;
+      border-bottom-left-radius: 5px;
+      margin-bottom: 15px;
+      align-self: flex-start;
+    }
+    .typing-dots {
+      display: flex;
+      gap: 4px;
+    }
+    .typing-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #999;
+      animation: typing 1.4s infinite ease-in-out;
+    }
+    .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+    .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+    @keyframes typing {
+      0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+    .language-info {
+      text-align: center;
+      margin-bottom: 15px;
+      color: #666;
+      font-size: 0.9rem;
+    }
+    .language-info span {
+      background: #f0f0f0;
+      padding: 5px 10px;
+      border-radius: 15px;
+      font-weight: 500;
+    }
+    @media (max-width: 768px) {
+      .chat-content {
+        height: 500px;
+        padding: 20px;
+      }
+      .message-bubble {
+        max-width: 90%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="header">
+      <h1>🤖 Diálogo com IA</h1>
+      <p>Converse com nossa IA em qualquer idioma</p>
+    </div>
+
+    <div class="nav-tabs">
+      <button class="nav-tab active">Chat</button>
+      <button class="nav-tab" onclick="window.location.href='/translator'">Tradutor</button>
+    </div>
+
+    <div class="chat-content">
+      <div class="language-info">
+        Idioma detectado: <span id="detectedLanguage">Português</span>
+      </div>
+      
+      <div class="chat-container" id="chatContainer">
+        <div class="message ai">
+          <div class="message-bubble">
+            Olá! Eu sou a Sophia. Em que idioma você gostaria de conversar? Pode falar em qualquer idioma e eu responderei no mesmo. 😊
+          </div>
+          <div class="message-time" id="initialTime"></div>
+        </div>
+      </div>
+
+      <div class="typing-indicator" id="typingIndicator">
+        <div class="typing-dots">
+          <div class="typing-dot"></div>
+          <div class="typing-dot"></div>
+          <div class="typing-dot"></div>
+        </div>
+      </div>
+
+      <div class="input-area">
+        <input type="text" id="messageInput" placeholder="Digite sua mensagem..." onkeypress="handleKeyPress(event)">
+        <button id="sendBtn" onclick="sendMessage()">Enviar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let detectedLanguage = 'pt-BR';
+    
+    // Detectar idioma do navegador
+    const browserLanguage = navigator.language || navigator.userLanguage;
+    const languageNames = {
+      'pt': 'Português', 'pt-BR': 'Português', 'pt-PT': 'Português',
+      'en': 'Inglês', 'en-US': 'Inglês', 'en-GB': 'Inglês',
+      'es': 'Espanhol', 'es-ES': 'Espanhol', 'es-MX': 'Espanhol',
+      'fr': 'Francês', 'fr-FR': 'Francês', 'fr-CA': 'Francês'
+    };
+    
+    detectedLanguage = browserLanguage;
+    document.getElementById('detectedLanguage').textContent = languageNames[browserLanguage] || 'Português';
+    
+    // Definir hora inicial
+    document.getElementById('initialTime').textContent = getCurrentTime();
+    
+    function getCurrentTime() {
+      const now = new Date();
+      return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+    }
+    
+    async function sendMessage() {
+      const messageInput = document.getElementById('messageInput');
+      const message = messageInput.value.trim();
+      
+      if (!message) return;
+      
+      // Detectar idioma da mensagem
+      const userLanguage = detectLanguage(message);
+      detectedLanguage = userLanguage;
+      document.getElementById('detectedLanguage').textContent = languageNames[userLanguage] || userLanguage;
+      
+      // Adicionar mensagem do usuário ao chat
+      addMessageToChat(message, 'user');
+      
+      // Limpar campo de entrada
+      messageInput.value = '';
+      
+      // Mostrar indicador de digitação
+      showTypingIndicator();
+      
+      try {
+        const response = await fetch('/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            message: message,
+            language: detectedLanguage
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+          throw new Error(data.error);
+        }
+
+        hideTypingIndicator();
+        addMessageToChat(data.response, 'ai');
+      } catch (error) {
+        hideTypingIndicator();
+        addMessageToChat('Desculpe, ocorreu um erro. Tente novamente.', 'ai');
+        console.error('Erro:', error);
+      }
+    }
+    
+    function addMessageToChat(message, sender) {
+      const chatContainer = document.getElementById('chatContainer');
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message ${sender}`;
+      
+      const bubbleDiv = document.createElement('div');
+      bubbleDiv.className = 'message-bubble';
+      bubbleDiv.textContent = message;
+      
+      const timeDiv = document.createElement('div');
+      timeDiv.className = 'message-time';
+      timeDiv.textContent = getCurrentTime();
+      
+      messageDiv.appendChild(bubbleDiv);
+      messageDiv.appendChild(timeDiv);
+      chatContainer.appendChild(messageDiv);
+      
+      // Rolar para o final
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+    
+    function showTypingIndicator() {
+      document.getElementById('typingIndicator').style.display = 'block';
+      const chatContainer = document.getElementById('chatContainer');
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+    
+    function hideTypingIndicator() {
+      document.getElementById('typingIndicator').style.display = 'none';
+    }
+    
+    function detectLanguage(text) {
+      const commonWords = {
+        'pt': ['o', 'a', 'de', 'do', 'da', 'em', 'um', 'uma', 'é', 'são', 'que', 'não'],
+        'en': ['the', 'a', 'an', 'in', 'on', 'at', 'is', 'are', 'to', 'for', 'and', 'but'],
+        'es': ['el', 'la', 'de', 'en', 'un', 'una', 'es', 'son', 'por', 'para', 'que', 'no'],
+        'fr': ['le', 'la', 'de', 'en', 'un', 'une', 'est', 'son', 'pour', 'dans', 'que', 'ne']
+      };
+      
+      let maxCount = 0;
+      let detectedLang = 'pt-BR';
+      
+      for (const lang in commonWords) {
+        let count = 0;
+        const words = text.toLowerCase().split(' ');
+        
+        for (const word of words) {
+          if (commonWords[lang].includes(word)) {
+            count++;
+          }
+        }
+        
+        if (count > maxCount) {
+          maxCount = count;
+          detectedLang = lang === 'pt' ? 'pt-BR' : 
+                        lang === 'en' ? 'en-US' : 
+                        lang === 'es' ? 'es-ES' : 
+                        lang === 'fr' ? 'fr-FR' : 'pt-BR';
+        }
+      }
+      
+      return detectedLang;
+    }
+    
+    function handleKeyPress(event) {
+      if (event.key === 'Enter') {
+        sendMessage();
+      }
+    }
+    
+    window.onload = function() {
+      document.getElementById('messageInput').focus();
+    };
+  </script>
+
+</body>
+</html>

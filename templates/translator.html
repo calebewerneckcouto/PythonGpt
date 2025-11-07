@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tradutor em Tempo Real</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    .container {
+      width: 100%;
+      max-width: 900px;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      overflow: hidden;
+    }
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+    .header h1 {
+      font-size: 1.8rem;
+      margin-bottom: 5px;
+    }
+    .header p {
+      opacity: 0.9;
+      font-size: 0.9rem;
+    }
+    .nav-tabs {
+      display: flex;
+      background: #f5f5f5;
+      border-bottom: 2px solid #ddd;
+    }
+    .nav-tab {
+      flex: 1;
+      padding: 15px;
+      text-align: center;
+      cursor: pointer;
+      background: #f5f5f5;
+      border: none;
+      font-size: 1rem;
+      font-weight: 500;
+      transition: all 0.3s;
+    }
+    .nav-tab:hover {
+      background: #e0e0e0;
+    }
+    .nav-tab.active {
+      background: white;
+      border-bottom: 3px solid #667eea;
+      color: #667eea;
+    }
+    .translator-content {
+      padding: 30px;
+    }
+    .language-selector {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 25px;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .lang-select-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .lang-select-group label {
+      font-weight: 600;
+      color: #555;
+      font-size: 0.9rem;
+    }
+    select {
+      padding: 12px 20px;
+      border-radius: 25px;
+      border: 2px solid #e0e0e0;
+      font-size: 1rem;
+      cursor: pointer;
+      background: white;
+      transition: border-color 0.3s;
+      min-width: 200px;
+    }
+    select:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    .auto-detect {
+      text-align: center;
+      margin: 10px 0;
+      color: #667eea;
+      font-weight: 500;
+    }
+    .language-controls {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .lang-btn {
+      padding: 10px 20px;
+      border: 2px solid #667eea;
+      border-radius: 25px;
+      background: white;
+      color: #667eea;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-weight: 500;
+    }
+    .lang-btn.active {
+      background: #667eea;
+      color: white;
+    }
+    .lang-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+    }
+    .mic-control {
+      text-align: center;
+      margin: 30px 0;
+    }
+    #startBtn {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      border: none;
+      font-size: 3rem;
+      cursor: pointer;
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+      transition: all 0.3s;
+      box-shadow: 0 10px 30px rgba(245, 87, 108, 0.3);
+    }
+    #startBtn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 15px 40px rgba(245, 87, 108, 0.5);
+    }
+    #startBtn.active {
+      animation: pulse 1.5s infinite;
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+    .translation-display {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      margin: 30px 0;
+    }
+    .display-panel {
+      background: #f9f9f9;
+      border-radius: 15px;
+      padding: 20px;
+      border: 2px solid #e0e0e0;
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+    }
+    .panel-title {
+      font-weight: 600;
+      color: #667eea;
+      font-size: 1.1rem;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .text-content {
+      flex: 1;
+      font-size: 1.5rem;
+      line-height: 1.6;
+      color: #333;
+      overflow-y: auto;
+      padding: 10px;
+      text-align: center;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100px;
+    }
+    .interim {
+      color: #999;
+      font-style: italic;
+    }
+    .final {
+      color: #333;
+      font-weight: 500;
+    }
+    .status-bar {
+      padding: 20px;
+      background: #f5f5f5;
+      border-radius: 15px;
+      text-align: center;
+      font-size: 1.1rem;
+      color: #666;
+      font-weight: 500;
+    }
+    .status-bar.listening {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+      animation: fadeIn 0.3s;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .controls-bottom {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+    .btn-secondary {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 25px;
+      font-size: 1rem;
+      cursor: pointer;
+      background: #667eea;
+      color: white;
+      transition: all 0.3s;
+    }
+    .btn-secondary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+    .detected-language {
+      display: inline-block;
+      background: #667eea;
+      color: white;
+      padding: 5px 12px;
+      border-radius: 15px;
+      font-size: 0.9rem;
+      margin-left: 10px;
+    }
+    .confidence {
+      font-size: 0.8rem;
+      color: #888;
+      margin-left: 10px;
+    }
+    .current-speaking {
+      background: #4CAF50 !important;
+    }
+    @media (max-width: 768px) {
+      #startBtn {
+        width: 100px;
+        height: 100px;
+        font-size: 2.5rem;
+      }
+      .translation-display {
+        flex-direction: column;
+      }
+      .language-controls {
+        flex-direction: column;
+        align-items: center;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="header">
+      <h1>🌍 Tradutor em Tempo Real</h1>
+      <p>Fale e veja a tradução instantânea enquanto você fala</p>
+    </div>
+
+    <div class="nav-tabs">
+      <button class="nav-tab" onclick="window.location.href='/'">Chat</button>
+      <button class="nav-tab active">Tradutor</button>
+    </div>
+
+    <div class="translator-content">
+      <div class="language-selector">
+        <div class="lang-select-group">
+          <label>🎤 Idioma para falar</label>
+          <div class="auto-detect">
+            <span id="detectedLangDisplay">Português (Brasil)</span>
+            <span class="confidence" id="confidenceDisplay"></span>
+          </div>
+        </div>
+
+        <div style="font-size: 2rem; color: #667eea;">→</div>
+
+        <div class="lang-select-group">
+          <label>🗣️ Traduzir para</label>
+          <select id="targetLang">
+            <option value="en">🇺🇸 Inglês</option>
+            <option value="pt">🇧🇷 Português</option>
+            <option value="es">🇪🇸 Espanhol</option>
+            <option value="fr">🇫🇷 Francês</option>
+            <option value="de">🇩🇪 Alemão</option>
+            <option value="it">🇮🇹 Italiano</option>
+            <option value="ja">🇯🇵 Japonês</option>
+            <option value="ko">🇰🇷 Coreano</option>
+            <option value="zh">🇨🇳 Chinês</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Controles de idioma para falar -->
+      <div class="language-controls">
+        <button class="lang-btn active" onclick="setSpeakingLanguage('pt-BR', 'Português')">
+          🇧🇷 Português
+        </button>
+        <button class="lang-btn" onclick="setSpeakingLanguage('en-US', 'Inglês')">
+          🇺🇸 Inglês
+        </button>
+        <button class="lang-btn" onclick="setSpeakingLanguage('es-ES', 'Espanhol')">
+          🇪🇸 Espanhol
+        </button>
+        <button class="lang-btn" onclick="setSpeakingLanguage('fr-FR', 'Francês')">
+          🇫🇷 Francês
+        </button>
+        <button class="lang-btn" onclick="setAutoDetect()">
+          🔍 Detecção Automática
+        </button>
+      </div>
+
+      <div class="mic-control">
+        <button id="startBtn" onclick="toggleTranslation()">🎤</button>
+        <p style="margin-top: 15px; color: #666; font-size: 0.95rem;">
+          Idioma atual: <span id="currentSpeakingLang">Português</span>
+        </p>
+      </div>
+
+      <div class="translation-display">
+        <div class="display-panel">
+          <div class="panel-title">
+            <span>🎤</span>
+            <span>Texto original</span>
+            <span class="detected-language" id="sourceLangDisplay">Português</span>
+          </div>
+          <div class="text-content" id="originalText">
+            <p style="color: #999;">O texto falado aparecerá aqui...</p>
+          </div>
+        </div>
+
+        <div class="display-panel">
+          <div class="panel-title">
+            <span>✨</span>
+            <span>Tradução</span>
+          </div>
+          <div class="text-content" id="translatedText">
+            <p style="color: #999;">A tradução aparecerá aqui...</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="status-bar" id="statusBar">
+        <span id="statusText">Pronto para começar - Clique no microfone</span>
+      </div>
+
+      <div class="controls-bottom">
+        <button class="btn-secondary" onclick="clearAll()">
+          🗑️ Limpar Tudo
+        </button>
+        <button class="btn-secondary" onclick="copyTranslation()">
+          📋 Copiar Tradução
+        </button>
+        <button class="btn-secondary" onclick="improveRecognition()">
+          🔧 Dicas de Uso
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let recognition = null;
+    let isTranslating = false;
+    let detectedLanguage = 'pt-BR';
+    let detectedLanguageName = 'Português (Brasil)';
+    let recognitionTimeout = null;
+    let isAutoDetect = false;
+    let currentSpeakingLanguage = 'pt-BR';
+
+    // Mapeamento de códigos de idioma para nomes
+    const languageNames = {
+      'pt-BR': 'Português (Brasil)',
+      'pt': 'Português',
+      'en-US': 'Inglês (EUA)',
+      'en': 'Inglês',
+      'es-ES': 'Espanhol',
+      'es': 'Espanhol',
+      'fr-FR': 'Francês',
+      'fr': 'Francês',
+      'de-DE': 'Alemão',
+      'de': 'Alemão',
+      'it-IT': 'Italiano',
+      'it': 'Italiano',
+      'ja-JP': 'Japonês',
+      'ja': 'Japonês',
+      'ko-KR': 'Coreano',
+      'ko': 'Coreano',
+      'zh-CN': 'Chinês',
+      'zh': 'Chinês'
+    };
+
+    // Palavras comuns em diferentes idiomas
+    const languagePatterns = {
+      'pt': {
+        words: ['o', 'a', 'de', 'do', 'da', 'em', 'um', 'uma', 'é', 'são', 'que', 'não', 'com', 'por', 'para', 'meu', 'minha', 'você', 'eu', 'nos', 'nós', 'sim', 'não', 'obrigado', 'obrigada', 'por favor', 'bom', 'boa', 'bem', 'mal', 'grande', 'pequeno', 'hoje', 'ontem', 'amanhã'],
+        phrases: ['como está', 'bom dia', 'boa tarde', 'boa noite', 'tudo bem', 'muito obrigado', 'por favor', 'de nada']
+      },
+      'en': {
+        words: ['the', 'a', 'an', 'in', 'on', 'at', 'is', 'are', 'to', 'for', 'and', 'but', 'or', 'with', 'by', 'my', 'your', 'he', 'she', 'it', 'we', 'they', 'yes', 'no', 'thank', 'please', 'good', 'bad', 'big', 'small', 'today', 'yesterday', 'tomorrow'],
+        phrases: ['how are you', 'good morning', 'good afternoon', 'good evening', 'thank you', 'please', 'you are welcome']
+      },
+      'es': {
+        words: ['el', 'la', 'de', 'en', 'un', 'una', 'es', 'son', 'por', 'para', 'que', 'no', 'con', 'mi', 'tu', 'su', 'yo', 'tú', 'él', 'ella', 'nosotros', 'ellos', 'sí', 'no', 'gracias', 'por favor', 'bueno', 'malo', 'grande', 'pequeño', 'hoy', 'ayer', 'mañana'],
+        phrases: ['cómo estás', 'buenos días', 'buenas tardes', 'buenas noches', 'muchas gracias', 'por favor', 'de nada']
+      },
+      'fr': {
+        words: ['le', 'la', 'de', 'en', 'un', 'une', 'est', 'son', 'pour', 'dans', 'que', 'ne', 'avec', 'mon', 'ton', 'son', 'je', 'tu', 'il', 'elle', 'nous', 'ils', 'oui', 'non', 'merci', 's il vous plaît', 'bon', 'mauvais', 'grand', 'petit', 'aujourd hui', 'hier', 'demain'],
+        phrases: ['comment allez-vous', 'bonjour', 'bonsoir', 'merci beaucoup', 's il vous plaît', 'de rien']
+      }
+    };
+
+    window.onload = function() {
+      initializeRecognition();
+    };
+
+    function setSpeakingLanguage(langCode, langName) {
+      currentSpeakingLanguage = langCode;
+      isAutoDetect = false;
+      
+      // Atualizar botões
+      document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.classList.remove('active', 'current-speaking');
+      });
+      event.target.classList.add('active', 'current-speaking');
+      
+      // Atualizar display
+      document.getElementById('detectedLangDisplay').textContent = langName;
+      document.getElementById('sourceLangDisplay').textContent = langName;
+      document.getElementById('currentSpeakingLang').textContent = langName;
+      document.getElementById('confidenceDisplay').textContent = '(selecionado)';
+      
+      // Atualizar reconhecimento se estiver ativo
+      if (recognition && isTranslating) {
+        recognition.lang = langCode;
+      }
+      
+      updateStatus(`✅ Idioma definido para ${langName} - Clique no microfone`, false);
+    }
+
+    function setAutoDetect() {
+      isAutoDetect = true;
+      
+      // Atualizar botões
+      document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.classList.remove('active', 'current-speaking');
+      });
+      event.target.classList.add('active');
+      
+      document.getElementById('detectedLangDisplay').textContent = 'Detecção Automática';
+      document.getElementById('currentSpeakingLang').textContent = 'Auto-detecção';
+      document.getElementById('confidenceDisplay').textContent = '';
+      
+      updateStatus('🔍 Modo detecção automática ativado - Clique no microfone', false);
+    }
+
+    function initializeRecognition() {
+      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        updateStatus('❌ Reconhecimento de voz não suportado neste navegador', false);
+        document.getElementById('startBtn').disabled = true;
+        return;
+      }
+
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.maxAlternatives = 3;
+      
+      recognition.lang = currentSpeakingLanguage;
+      recognition.continuous = true;
+      recognition.interimResults = true;
+
+      recognition.onresult = function(event) {
+        clearTimeout(recognitionTimeout);
+        
+        let interimTranscript = '';
+        let finalTranscript = '';
+        let bestAlternative = '';
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const result = event.results[i];
+          
+          if (result[0]) {
+            const transcript = result[0].transcript;
+            if (result.isFinal) {
+              finalTranscript += transcript + ' ';
+              bestAlternative = transcript;
+            } else {
+              interimTranscript += transcript;
+            }
+          }
+        }
+
+        // Atualizar o texto original
+        updateOriginalText(interimTranscript, finalTranscript || bestAlternative);
+
+        // Detectar idioma automaticamente se estiver no modo auto
+        const textToAnalyze = finalTranscript || interimTranscript || bestAlternative;
+        if (textToAnalyze.trim() && isAutoDetect) {
+          detectLanguage(textToAnalyze.trim());
+        }
+
+        // Traduzir texto
+        if (finalTranscript.trim()) {
+          translateText(finalTranscript.trim());
+        } else if (interimTranscript.trim() && interimTranscript.length > 3) {
+          translateText(interimTranscript.trim(), true);
+        }
+
+        recognitionTimeout = setTimeout(() => {
+          if (isTranslating) {
+            recognition.stop();
+            setTimeout(() => {
+              if (isTranslating) recognition.start();
+            }, 100);
+          }
+        }, 3000);
+      };
+
+      recognition.onerror = function(event) {
+        console.error('Erro no reconhecimento:', event.error);
+        if (event.error === 'no-speech') {
+          updateStatus('🎤 Nenhuma fala detectada. Continue falando...', true);
+        } else if (event.error === 'audio-capture') {
+          updateStatus('❌ Erro no microfone. Verifique as permissões.', false);
+          stopTranslation();
+        } else if (event.error === 'not-allowed') {
+          updateStatus('❌ Permissão de microfone negada.', false);
+          stopTranslation();
+        } else {
+          updateStatus('⚠️ Erro: ' + event.error, true);
+        }
+      };
+
+      recognition.onend = function() {
+        if (isTranslating) {
+          setTimeout(() => {
+            if (isTranslating) recognition.start();
+          }, 100);
+        }
+      };
+    }
+
+    function detectLanguage(text) {
+      if (!text || text.length < 2) return;
+
+      const lowerText = text.toLowerCase();
+      let scores = {};
+      let totalScore = 0;
+
+      for (const [lang, pattern] of Object.entries(languagePatterns)) {
+        let score = 0;
+        
+        pattern.words.forEach(word => {
+          const regex = new RegExp(`\\b${word}\\b`, 'gi');
+          const matches = lowerText.match(regex);
+          if (matches) score += matches.length * 2;
+        });
+
+        pattern.phrases.forEach(phrase => {
+          if (lowerText.includes(phrase)) {
+            score += phrase.split(' ').length * 3;
+          }
+        });
+
+        if (lang === 'pt' && lowerText.match(/[ãõâêîôûáéíóúàèìòù]/)) score += 5;
+        if (lang === 'es' && lowerText.match(/[ñáéíóúü]/)) score += 5;
+        if (lang === 'fr' && lowerText.match(/[àâäèéêëîïôœùûüÿç]/)) score += 5;
+
+        scores[lang] = score;
+        totalScore += score;
+      }
+
+      let bestLang = 'pt';
+      let bestScore = 0;
+
+      for (const [lang, score] of Object.entries(scores)) {
+        if (score > bestScore) {
+          bestScore = score;
+          bestLang = lang;
+        }
+      }
+
+      const confidence = totalScore > 0 ? (bestScore / totalScore) * 100 : 0;
+
+      if (confidence > 30) {
+        const langCode = bestLang === 'pt' ? 'pt-BR' : 
+                        bestLang === 'en' ? 'en-US' : 
+                        bestLang === 'es' ? 'es-ES' : 
+                        bestLang === 'fr' ? 'fr-FR' : 'pt-BR';
+        
+        detectedLanguage = langCode;
+        detectedLanguageName = languageNames[langCode] || 'Português (Brasil)';
+
+        document.getElementById('detectedLangDisplay').textContent = detectedLanguageName;
+        document.getElementById('sourceLangDisplay').textContent = detectedLanguageName.split(' ')[0];
+        document.getElementById('confidenceDisplay').textContent = `(${Math.round(confidence)}% confiança)`;
+
+        if (recognition && isTranslating) {
+          recognition.lang = langCode;
+        }
+      }
+    }
+
+    function toggleTranslation() {
+      if (!recognition) {
+        alert('Reconhecimento de voz não disponível');
+        return;
+      }
+
+      if (isTranslating) {
+        stopTranslation();
+      } else {
+        startTranslation();
+      }
+    }
+
+    function startTranslation() {
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ audio: true })
+          .then(function(stream) {
+            stream.getTracks().forEach(track => track.stop());
+            proceedWithTranslation();
+          })
+          .catch(function(err) {
+            alert('Permissão de microfone negada. Por favor, permita o acesso ao microfone.');
+            console.error('Erro de permissão:', err);
+          });
+      } else {
+        proceedWithTranslation();
+      }
+    }
+
+    function proceedWithTranslation() {
+      isTranslating = true;
+      
+      const startBtn = document.getElementById('startBtn');
+      startBtn.classList.add('active');
+      startBtn.textContent = '🛑';
+      
+      // Configurar idioma baseado na seleção
+      if (!isAutoDetect) {
+        recognition.lang = currentSpeakingLanguage;
+      }
+      
+      const langInfo = isAutoDetect ? 'detecção automática' : document.getElementById('currentSpeakingLang').textContent;
+      updateStatus(`🎤 Escutando em ${langInfo}... Fale claramente`, true);
+      
+      document.getElementById('originalText').innerHTML = '<p style="color: #999;">Comece a falar...</p>';
+      document.getElementById('translatedText').innerHTML = '<p style="color: #999;">A tradução aparecerá aqui...</p>';
+
+      if (recognition) {
+        recognition.stop();
+        setTimeout(() => {
+          recognition.start();
+        }, 200);
+      }
+    }
+
+    function stopTranslation() {
+      isTranslating = false;
+      clearTimeout(recognitionTimeout);
+      
+      const startBtn = document.getElementById('startBtn');
+      startBtn.classList.remove('active');
+      startBtn.textContent = '🎤';
+      
+      updateStatus('✅ Tradução pausada - Clique no microfone para continuar', false);
+      
+      if (recognition) {
+        recognition.stop();
+      }
+    }
+
+    function updateOriginalText(interim, final) {
+      const originalDiv = document.getElementById('originalText');
+      
+      if (final) {
+        originalDiv.innerHTML = `<span class="final">${final}</span>`;
+      } else if (interim) {
+        originalDiv.innerHTML = `<span class="interim">${interim}</span>`;
+      }
+    }
+
+    async function translateText(text, isInterim = false) {
+      if (!text.trim() || text.length < 2) return;
+
+      const targetLang = document.getElementById('targetLang').value;
+
+      try {
+        const response = await fetch('/translate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            text: text,
+            target_language: targetLang
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+          throw new Error(data.error);
+        }
+
+        const translation = data.translation;
+        
+        const translatedDiv = document.getElementById('translatedText');
+        
+        if (isInterim) {
+          translatedDiv.innerHTML = `<span class="interim">${translation}</span>`;
+        } else {
+          translatedDiv.innerHTML = `<span class="final">${translation}</span>`;
+        }
+
+      } catch (error) {
+        console.error('Erro na tradução:', error);
+        if (!isInterim) {
+          document.getElementById('translatedText').innerHTML = `<span style="color: #f5576c;">Erro na tradução</span>`;
+        }
+      }
+    }
+
+    function updateStatus(message, isListening) {
+      const statusBar = document.getElementById('statusBar');
+      const statusText = document.getElementById('statusText');
+      
+      statusText.textContent = message;
+      
+      if (isListening) {
+        statusBar.classList.add('listening');
+      } else {
+        statusBar.classList.remove('listening');
+      }
+    }
+
+    function clearAll() {
+      document.getElementById('originalText').innerHTML = '<p style="color: #999;">O texto falado aparecerá aqui...</p>';
+      document.getElementById('translatedText').innerHTML = '<p style="color: #999;">A tradução aparecerá aqui...</p>';
+      document.getElementById('confidenceDisplay').textContent = '';
+      
+      if (isTranslating) {
+        const langInfo = isAutoDetect ? 'detecção automática' : document.getElementById('currentSpeakingLang').textContent;
+        updateStatus(`🎤 Escutando em ${langInfo}... Fale claramente`, true);
+      } else {
+        updateStatus('Pronto para começar - Clique no microfone', false);
+      }
+    }
+
+    function copyTranslation() {
+      const translatedText = document.getElementById('translatedText').textContent;
+      if (translatedText && !translatedText.includes('A tradução aparecerá aqui')) {
+        navigator.clipboard.writeText(translatedText)
+          .then(() => {
+            alert('Tradução copiada para a área de transferência!');
+          })
+          .catch(err => {
+            console.error('Erro ao copiar texto: ', err);
+            alert('Erro ao copiar a tradução');
+          });
+      } else {
+        alert('Nenhuma tradução para copiar');
+      }
+    }
+
+    function improveRecognition() {
+      alert('💡 Dicas para melhor uso:\n\n• Selecione o idioma que vai falar nos botões acima\n• Use "Detecção Automática" para idiomas variados\n• Fale claramente e em ritmo normal\n• Use frases completas para melhor precisão\n• Mantenha o microfone próximo e evite ruídos');
+    }
+
+    // Dica inicial
+    setTimeout(() => {
+      if (!isTranslating) {
+        updateStatus('💡 Selecione o idioma que vai falar nos botões acima', false);
+      }
+    }, 3000);
+  </script>
+
+</body>
+</html>

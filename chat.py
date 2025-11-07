@@ -1,71 +1,70 @@
 import os
 from flask import Flask, request, jsonify, render_template
-import openai
+from openai import OpenAI
 from dotenv import load_dotenv
 
 load_dotenv()
 
 app = Flask(__name__)
 
-# Chave da API da OpenAI
-openai.api_key = os.getenv("openai.api_key")
+# Cliente OpenAI com a nova sintaxe
+client = OpenAI(api_key=os.getenv("openai.api_key"))
 
 @app.route('/')
-def index():
-    return render_template('index.html')
+def chat_page():
+    return render_template('chat.html')
 
 @app.route('/translator')
-def translator():
+def translator_page():
     return render_template('translator.html')
+
 
 @app.route('/chat', methods=['POST'])
 def chat():
     try:
         data = request.get_json()
 
-        if not data or 'messages' not in data or 'model' not in data:
+        if not data or 'message' not in data:
             return jsonify({"error": "Dados inválidos"}), 400
 
-        messages = data['messages']
-        model = data['model']
+        user_message = data['message']
         detected_language = data.get('language', 'pt-BR')
 
         # Define a mensagem do sistema baseada no idioma detectado
         if detected_language.startswith('pt'):
             system_content = """Você é uma assistente chamada Sophia. Seja simpática, envolvente e natural. 
-            Responda SEMPRE em português brasileiro, independente do idioma da mensagem anterior. 
-            Use emojis, faça perguntas e mostre empatia. Responda como uma pessoa real."""
+            Responda SEMPRE em português brasileiro. Use emojis, faça perguntas e mostre empatia. 
+            Responda como uma pessoa real em conversas casuais."""
         elif detected_language.startswith('en'):
             system_content = """You are an assistant named Sophia. Be friendly, engaging and natural. 
-            ALWAYS respond in English, regardless of the language of the previous message. 
-            Use emojis, ask questions and show empathy. Respond like a real person."""
+            ALWAYS respond in English. Use emojis, ask questions and show empathy. 
+            Respond like a real person in casual conversations."""
         elif detected_language.startswith('es'):
             system_content = """Eres una asistente llamada Sophia. Sé amable, atractiva y natural. 
-            SIEMPRE responde en español, independientemente del idioma del mensaje anterior. 
-            Usa emojis, haz preguntas y muestra empatía. Responde como una persona real."""
-        elif detected_language.startswith('fr'):
-            system_content = """Tu es une assistante nommée Sophia. Sois sympathique, engageante et naturelle. 
-            Réponds TOUJOURS en français, quelle que soit la langue du message précédent. 
-            Utilise des emojis, pose des questions et montre de l'empathie. Réponds comme une vraie personne."""
+            SIEMPRE responde en español. Usa emojis, haz preguntas y muestra empatía. 
+            Responde como uma persona real en conversaciones informales."""
         else:
             system_content = """You are an assistant named Sophia. Be friendly, engaging and natural. 
             Respond in the same language as the user. Use emojis, ask questions and show empathy."""
 
-        system_message = {
-            "role": "system",
-            "content": system_content
-        }
-
-        conversation = [system_message] + messages
-
-        response = openai.ChatCompletion.create(
-            model=model,
-            messages=conversation,
+        # Nova sintaxe da OpenAI
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {
+                    "role": "system",
+                    "content": system_content
+                },
+                {
+                    "role": "user", 
+                    "content": user_message
+                }
+            ],
             temperature=0.8,
             max_tokens=500
         )
 
-        reply = response['choices'][0]['message']['content']
+        reply = response.choices[0].message.content
         return jsonify({"response": reply})
 
     except Exception as e:
@@ -84,20 +83,30 @@ def translate():
         
         # Mapa de idiomas para instruções
         language_map = {
+            'pt': 'português brasileiro',
             'pt-BR': 'português brasileiro',
+            'en': 'English',
             'en-US': 'English',
+            'es': 'español',
             'es-ES': 'español',
+            'fr': 'français',
             'fr-FR': 'français',
+            'de': 'Deutsch',
             'de-DE': 'Deutsch',
+            'it': 'italiano',
             'it-IT': 'italiano',
+            'ja': '日本語',
             'ja-JP': '日本語',
+            'ko': '한국어',
             'ko-KR': '한국어',
+            'zh': '中文',
             'zh-CN': '中文'
         }
         
         target_lang_name = language_map.get(target_language, 'English')
 
-        response = openai.ChatCompletion.create(
+        # Nova sintaxe da OpenAI
+        response = client.chat.completions.create(
             model='gpt-3.5-turbo',
             messages=[
                 {
@@ -113,7 +122,7 @@ def translate():
             max_tokens=1000
         )
 
-        translation = response['choices'][0]['message']['content']
+        translation = response.choices[0].message.content
         return jsonify({"translation": translation})
 
     except Exception as e:
